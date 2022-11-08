@@ -5,6 +5,7 @@ import Error from "./components/Error";
 
 function App() {
   const [items, setItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
   const [inputValue, setInputValue] = useState(null);
   const [option, setOption] = useState("#967BDC");
 
@@ -19,7 +20,7 @@ function App() {
 
   function handleAddItem() {
     if (inputValue?.length > 3) {
-      items.push({ text: inputValue, color: option, completed: false });
+      items.push({ title: inputValue, color: option, completed: false });
       document.getElementById("input").value = "";
       setItems([...items]);
     }
@@ -31,30 +32,59 @@ function App() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await fetch(
-        "https://jsonplaceholder.typicode.com/todos"
-      );
+      const response = await fetch("http://localhost:3004/todos");
       const json = await response.json();
       //console.log(json[0].title)
 
       if (response.ok) {
-        const updated = json.map((item) => ({ ...item, color: colors[Math.floor(Math.random() * ((colors.length - 1) - 0 + 1)) + 0] }));
+        const updated = json.map((item) => ({
+          ...item,
+          color:
+            colors[Math.floor(Math.random() * (colors.length - 1 - 0 + 1)) + 0],
+        }));
         setItems(updated);
       }
     };
 
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    setFilteredItems(items);
+  }, [items]);
 
   return (
     <div className="App">
       <h1>Poznámky</h1>
+      <div className="filter-bar">
+        <button onClick={() => setFilteredItems(items)}>all</button>
+        <button
+          onClick={() =>
+            setFilteredItems(items.filter((item) => !item.completed))
+          }
+        >
+          active
+        </button>
+        <button
+          onClick={() =>
+            setFilteredItems(items.filter((item) => item.completed))
+          }
+        >
+          completed
+        </button>
+        {
+          <span style={{ float: "right" }}>
+            {items.filter((item) => !item.completed).length} items left
+          </span>
+        }
+      </div>
 
       {inputValue?.length < 3 && <Error />}
 
       <div className="list">
         {items &&
-          items.map((item, index) => (
+          filteredItems.map((item, index) => (
             <ListItem
               item={item}
               key={index}

@@ -19,6 +19,13 @@ body {
   width: 40rem;
 }
 
+.App .filter-bar button {
+  padding: 0.3rem;
+  width: 5rem;
+  margin-right: 5px;
+  cursor: pointer;
+}
+
 .App .list {
   overflow: auto;
   height: 60vh;
