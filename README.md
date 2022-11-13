@@ -1,4 +1,4 @@
-# Screenshot z aplikace
+# Gif z aplikace - paging + filters
 
-![Alt text](public/screenshot.png?raw=true "")
+![Alt text](public/paging.gif?raw=true "")
 

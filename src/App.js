@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import "./App.css";
 import ListItem from "./components/list/ListItem";
 import Error from "./components/Error";
+import MyTable from "./components/table/MyTable";
 
 function App() {
   const [items, setItems] = useState([]);
@@ -47,17 +48,61 @@ function App() {
     };
 
     fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     setFilteredItems(items);
   }, [items]);
 
+  const columns = [
+    {
+      attribute: "id",
+    },
+    {
+      attribute: "title",
+    },
+    {
+      attribute: "id",
+      component: (item) => (
+        <span
+          className="material-symbols-outlined close"
+          style={{ cursor: "pointer" }}
+        >
+          close
+        </span>
+      ),
+    },
+  ];
+
+  const todosFilters = [
+    {
+      title: "All",
+      filterFunction: (data) => data,
+    },
+    {
+      title: "Active",
+      filterFunction: (data) => data.filter((item) => !item.completed),
+    },
+    {
+      title: "Complete",
+      filterFunction: (data) => data.filter((item) => item.completed),
+    },
+  ];
+
   return (
     <div className="App">
       <h1>Poznámky</h1>
-      <div className="filter-bar">
+
+      <MyTable
+        baseUri={"http://localhost:3004"}
+        object={"todos"}
+        columns={columns}
+        filters={todosFilters}
+        limit={10}
+      />
+
+      {/*<div className="filter-bar">
         <button onClick={() => setFilteredItems(items)}>all</button>
         <button
           onClick={() =>
@@ -78,11 +123,11 @@ function App() {
             {items.filter((item) => !item.completed).length} items left
           </span>
         }
-      </div>
+      </div>*/}
 
-      {inputValue?.length < 3 && <Error />}
+      {/*inputValue?.length < 3 && <Error />*/}
 
-      <div className="list">
+      {/*<div className="list">
         {items &&
           filteredItems.map((item, index) => (
             <ListItem
@@ -95,9 +140,9 @@ function App() {
               }}
             />
           ))}
-      </div>
+            </div>*/}
 
-      <div className="controll-bar">
+      {/*<div className="controll-bar">
         <input
           type="text"
           id="input"
@@ -114,7 +159,7 @@ function App() {
         </select>
 
         <button onClick={handleAddItem}>Vlož</button>
-      </div>
+      </div>*/}
     </div>
   );
 }
