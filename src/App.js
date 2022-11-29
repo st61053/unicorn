@@ -1,79 +1,148 @@
-import { useState, useEffect } from "react";
 import "./App.css";
-import ListItem from "./components/list/ListItem";
-import Error from "./components/Error";
 import MyTable from "./components/table/MyTable";
+import { useState, useEffect } from "react";
+import 'rsuite/dist/rsuite.min.css';
+
+import { Routes, Route, Link, useParams } from "react-router-dom";
+import Item from "./components/Item";
+import EditForm from "./components/EditForm";
+
+import { Table } from "rsuite";
+
+function ItemDetailManagement() {
+  let { id } = useParams();
+  return (
+    <>
+      <Item id={id} />
+      <Link to={`/edit/${id}`}>Edit</Link>
+      <Link to={"/"}>Zpět na přehled</Link>
+    </>
+  );
+}
+
+function ItemEditManagement() {
+  let { id } = useParams();
+  return (
+    <>
+      <EditForm id={id} />
+      <Link to={`/item/${id}`}>Zpět na item</Link>
+    </>
+  );
+}
 
 function App() {
-  const [items, setItems] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]);
-  const [inputValue, setInputValue] = useState(null);
-  const [option, setOption] = useState("#967BDC");
+  const [data, setData] = useState([]);
+  const { Column, HeaderCell, Cell } = Table;
 
-  const colors = [
-    "#967BDC",
-    "#36BC9B",
-    "#F8BA43",
-    "#4B89DC",
-    "#D94555",
-    "#D96FAD",
-  ];
+  const fetchData = async () => {
+    const response = await fetch("http://localhost:3004/todos");
+    const json = await response.json();
 
-  function handleAddItem() {
-    if (inputValue?.length > 3) {
-      items.push({ title: inputValue, color: option, completed: false });
-      document.getElementById("input").value = "";
-      setItems([...items]);
+    if (response.ok) {
+      setData(json);
     }
-  }
-
-  function setSelectValue(event) {
-    setOption(event.target.value);
-  }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      const response = await fetch("http://localhost:3004/todos");
-      const json = await response.json();
-      //console.log(json[0].title)
-
-      if (response.ok) {
-        const updated = json.map((item) => ({
-          ...item,
-          color:
-            colors[Math.floor(Math.random() * (colors.length - 1 - 0 + 1)) + 0],
-        }));
-        setItems(updated);
-      }
-    };
-
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    setFilteredItems(items);
-  }, [items]);
+  // ------------ COLUMNS ------------------
 
   const columns = [
+    {
+      attribute: "id",
+      component: (item, customFunction) => (
+        <input
+          type="checkbox"
+          onChange={async () => {
+            await completeItem(item.id);
+            customFunction.reloadData();
+          }}
+          checked={item.completed ? "checked" : ""}
+          style={{
+            width: "1.3em",
+            height: "1.3em",
+            backgroundColor: item.completed ? "black" : "white",
+            borderRadius: "50%",
+            padding: "3px",
+            verticalAlign: "middle",
+            border: "1px solid black",
+            backgroundClip: "content-box",
+            appearance: "none",
+            outline: "none",
+            cursor: "pointer",
+          }}
+        />
+      ),
+    },
     {
       attribute: "id",
     },
     {
       attribute: "title",
+      component: (item) => (
+        <Link
+          to={`/item/${item.id}`}
+          style={{
+            color: item.completed ? "#D3D3D3" : "black",
+            textDecoration: item.completed ? "line-through" : "none",
+          }}
+        >
+          {item.title}
+        </Link>
+      ),
     },
     {
       attribute: "id",
-      component: (item) => (
+      component: (item, customFunction) => (
         <span
           className="material-symbols-outlined close"
-          style={{ cursor: "pointer" }}
+          style={{ cursor: "pointer", color: "red" }}
+          onClick={async () => {
+            await deleteItem(item.id);
+            customFunction();
+          }}
         >
           close
         </span>
       ),
     },
   ];
+
+  // ------------ FUNCTIONS FOR COMPONENTS ------------------
+
+  function deleteItem(id) {
+    return fetch(`http://localhost:3004/todos/${id}`, {
+      method: "DELETE",
+    }).then((response) => response.json());
+  }
+
+  async function completeItem(id) {
+    await fetch(`http://localhost:3004/todos/${id}`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then(async (response) => {
+        const updateItem = {
+          completed: !response.completed,
+        };
+
+        await fetch(`http://localhost:3004/todos/${id}`, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "PATCH",
+          body: JSON.stringify(updateItem),
+        });
+      });
+  }
+
+  // ------------ FILTERS ------------------
 
   const todosFilters = [
     {
@@ -92,74 +161,39 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Poznámky</h1>
-
-      <MyTable
-        baseUri={"http://localhost:3004"}
-        object={"todos"}
-        columns={columns}
-        filters={todosFilters}
-        limit={10}
-      />
-
-      {/*<div className="filter-bar">
-        <button onClick={() => setFilteredItems(items)}>all</button>
-        <button
-          onClick={() =>
-            setFilteredItems(items.filter((item) => !item.completed))
-          }
-        >
-          active
-        </button>
-        <button
-          onClick={() =>
-            setFilteredItems(items.filter((item) => item.completed))
-          }
-        >
-          completed
-        </button>
-        {
-          <span style={{ float: "right" }}>
-            {items.filter((item) => !item.completed).length} items left
-          </span>
-        }
-      </div>*/}
-
-      {/*inputValue?.length < 3 && <Error />*/}
-
-      {/*<div className="list">
-        {items &&
-          filteredItems.map((item, index) => (
-            <ListItem
-              item={item}
-              key={index}
-              index={index}
-              onCompletedClick={(id) => {
-                item.completed = !item.completed;
-                setItems([...items]);
-              }}
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <MyTable
+              baseUri={"http://localhost:3004"}
+              object={"todos"}
+              columns={columns}
+              filters={todosFilters}
+              limit={10}
+              title={"Todos"}
             />
-          ))}
-            </div>*/}
-
-      {/*<div className="controll-bar">
-        <input
-          type="text"
-          id="input"
-          onChange={(e) => setInputValue(e.target.value)}
+          }
         />
-
-        <select name="color" id="select-color" onChange={setSelectValue}>
-          <option value="#967BDC">fialová</option>
-          <option value="#36BC9B">zelená</option>
-          <option value="#F8BA43">žlutá</option>
-          <option value="#4B89DC">modrá</option>
-          <option value="#D94555">červená</option>
-          <option value="#D96FAD">růžová</option>
-        </select>
-
-        <button onClick={handleAddItem}>Vlož</button>
-      </div>*/}
+        <Route exact path="/item/:id" element={<ItemDetailManagement />} />
+        <Route exact path="/edit/:id" element={<ItemEditManagement />} />
+        <Route
+          exact
+          path="/rsuite"
+          element={
+            <Table data={data} height={700} rowKey="id">
+              <Column width={60} align="center" fixed>
+                <HeaderCell>Id</HeaderCell>
+                <Cell dataKey="id" />
+              </Column>
+              <Column width={150}>
+                <HeaderCell>Title</HeaderCell>
+                <Cell dataKey="title" />
+              </Column>
+            </Table>
+          }
+        />
+      </Routes>
     </div>
   );
 }

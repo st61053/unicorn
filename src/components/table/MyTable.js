@@ -5,24 +5,24 @@ const MyTable = (props) => {
   const [filteredData, setFilteredData] = useState([]);
   const [page, setPage] = useState(1);
 
+  const fetchData = async () => {
+    const response = await fetch(
+      props.baseUri +
+        "/" +
+        props.object +
+        "?_page=" +
+        page +
+        "&_limit=" +
+        props.limit
+    );
+    const json = await response.json();
+
+    if (response.ok) {
+      setData(json);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      const response = await fetch(
-        props.baseUri +
-          "/" +
-          props.object +
-          "?_page=" +
-          page +
-          "&_limit=" +
-          props.limit
-      );
-      const json = await response.json();
-
-      if (response.ok) {
-        setData(json);
-      }
-    };
-
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
@@ -33,6 +33,7 @@ const MyTable = (props) => {
 
   return (
     <div className="table-div">
+      <h1>{props.title}</h1>
       <div className="filter-bar">
         {props.filters &&
           props.filters?.map((item, index) => {
@@ -66,9 +67,9 @@ const MyTable = (props) => {
             onClick={() => {
               setPage((curr) => {
                 if (data.length > 0) {
-                  return curr + 1
+                  return curr + 1;
                 } else {
-                  return curr
+                  return curr;
                 }
               });
             }}
@@ -84,15 +85,12 @@ const MyTable = (props) => {
             return (
               <tr
                 key={"tr-" + index}
-                style={{
-                  color: item.completed ? "#D3D3D3" : "black",
-                  textDecoration: item.completed ? "line-through" : "",
-                }}
               >
                 {props.columns.map((column, index) => {
                   return (
                     <td key={"td-" + item.id + "index" + index}>
-                      {(column?.component && column.component(item)) ??
+                      {(column?.component &&
+                        column.component(item, {reloadData: fetchData})) ??
                         item[column.attribute]}
                     </td>
                   );
